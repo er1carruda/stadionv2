@@ -1,89 +1,65 @@
 // app/components/Header.tsx
 import Link from 'next/link';
-import Image from 'next/image';
-import { Home, Building, Users, LogOut, LogIn, UserPlus } from 'lucide-react'; // Adiciona ícones de login/logout/signup
+import { cookies } from 'next/headers'; // <-- PASSO 1: Importa cookies
+import { createClient } from '@/lib/supabase/server'; // Importa o helper modificado
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
-import { createClient } from '@/lib/supabase/server'; // Importa o cliente server-side
-import { Button } from '@/components/ui/button'; // Importa o Button
 import { logout } from '@/app/auth/actions'; // Importa a action de logout
 
-// Transforma o Header em um Server Component async
 export default async function Header() {
+  // ---> PASSO 2: Cria o cookieStore esperando a Promise resolver <---
+  const cookieStore = await cookies();
+  // ---> PASSO 3: Passa o cookieStore para createClient <---
+  const supabase = createClient(cookieStore);
+
   // Verifica o estado de autenticação no servidor
-  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-
-        {/* Logo e Título (Esquerda) */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <Image
-            className="transition-opacity group-hover:opacity-80"
-            src="/logo.svg"
-            alt="StadionApp Logo"
-            width={45}
-            height={25} // Ajustei a altura para parecer mais proporcional
-            priority
-          />
-          <span className="text-lg font-bold font-[family-name:var(--font-syncopate)] text-foreground hidden sm:inline transition-colors group-hover:text-foreground/80">
-            Stadion
-          </span>
-        </Link>
-
-        {/* Agrupamento dos Links e Controles (Direita) */}
-        <div className="flex items-center gap-4 sm:gap-5"> {/* Ajuste o gap */}
-
-          {/* Links de Navegação */}
-          <Link href="/" className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground transition-colors" title="Home">
-             <Home className="w-4 h-4" />
-            <span className="hidden md:inline">Home</span>
+      <div className="container flex h-14 max-w-screen-2xl items-center">
+        {/* Logo e Nome do App */}
+        <div className="mr-4 flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            {/* <Icons.logo className="h-6 w-6" /> Substitua por seu logo se tiver */}
+            <img src="/logo.svg" alt="StadionApp Logo" className="h-6 w-6" /> {/* Exemplo com img */}
+            <span className="font-bold inline-block">
+              StadionApp
+            </span>
           </Link>
-          <Link href="/facilities" className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground transition-colors" title="Instalações">
-            <Building className="w-4 h-4" />
-            <span className="hidden md:inline">Instalações</span>
-          </Link>
-          <Link href="/instructors" className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground transition-colors" title="Instrutores">
-            <Users className="w-4 h-4" />
-             <span className="hidden md:inline">Instrutores</span>
-          </Link>
+          {/* Links de Navegação (Opcional) */}
+          {/* <nav className="flex items-center gap-6 text-sm">
+            <Link
+              href="/facilities"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Instalações
+            </Link>
+             <Link
+              href="/instructors"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Instrutores
+            </Link>
+          </nav> */}
+        </div>
 
-          {/* Separador (Opcional) */}
-          <div className="h-6 w-px bg-border/50 mx-1 hidden sm:block"></div>
-
-          {/* Botões Condicionais de Autenticação */}
+        {/* Botões de Ação (Login/Logout, Theme) */}
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          <ThemeToggle />
           {user ? (
-            // Se usuário está logado, mostra botão de Logout
+            // Se logado, mostra botão de Logout (que usa Server Action)
             <form action={logout}>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-foreground/60 hover:text-foreground">
-                <LogOut className="w-4 h-4" />
-                <span className="hidden md:inline">Sair</span>
-              </Button>
+              <Button variant="outline" size="sm">Logout</Button>
             </form>
           ) : (
-            // Se não está logado, mostra Login e Cadastro
-            <>
-              <Button variant="ghost" size="sm" asChild className="flex items-center gap-1.5 text-foreground/60 hover:text-foreground">
-                <Link href="/login">
-                  <LogIn className="w-4 h-4" />
-                  <span className="hidden md:inline">Entrar</span>
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild className="flex items-center gap-1.5">
-                 <Link href="/signup">
-                   <UserPlus className="w-4 h-4" />
-                   <span className="hidden md:inline">Cadastrar</span>
-                 </Link>
-              </Button>
-            </>
+            // Se deslogado, mostra botão de Login
+            <Button asChild variant="outline" size="sm">
+              <Link href="/login">Login</Link>
+            </Button>
           )}
-
-          {/* Theme Toggle Button */}
-          <ThemeToggle />
-
         </div>
-      </nav>
+      </div>
     </header>
   );
 }

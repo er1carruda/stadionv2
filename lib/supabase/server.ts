@@ -1,38 +1,34 @@
 // lib/supabase/server.ts
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+// Importa o tipo específico para o cookieStore retornado por next/headers
+import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 
-export function createClient() {
-  // Obtém o armazenamento de cookies do Next.js para o contexto atual.
-  const cookieStore = cookies()
+// Modificado para aceitar cookieStore como argumento
+export function createClient(cookieStore: ReadonlyRequestCookies) {
+  // Não chama mais cookies() aqui dentro
 
-  // Cria a instância do cliente Supabase para uso no Servidor.
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // Função para ler um cookie
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        // Usa o cookieStore passado como argumento
+        getAll() {
+          // Retorna um array de objetos { name: string, value: string }
+          return cookieStore.getAll();
         },
-        // Função para definir um cookie (pode falhar em Server Components, por isso o try/catch)
-        set(name: string, value: string, options: CookieOptions) {
+        // Usa o cookieStore passado como argumento
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
-            cookieStore.set({ name, value, ...options })
+            // Itera e usa o método set do cookieStore
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
           } catch (error) {
-            // Ignora erros se tentar definir cookie em um contexto read-only (Server Component)
-          }
-        },
-        // Função para remover um cookie (pode falhar em Server Components, por isso o try/catch)
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
-             // Ignora erros se tentar remover cookie em um contexto read-only (Server Component)
+             // Ignora erros se tentar definir cookies em um contexto read-only (ex: Server Component puro)
+             // O erro é mais provável de ocorrer em Server Actions se algo estiver errado.
+             // console.error("Error setting cookies in Supabase server client:", error); // Opcional: logar o erro
           }
         },
       },
     }
-  )
+  );
 }

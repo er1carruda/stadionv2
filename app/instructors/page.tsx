@@ -6,9 +6,9 @@ import { AlertTriangle } from 'lucide-react'; // Ícone para erro
 
 // Transforma a função em async
 export default async function InstructorsPage() {
-  const cookieStore = cookies()
-  const supabase = createClient()
-
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore) // Passa o cookieStore
+  
   // Busca dados de instrutores.
   // Se você quisesse buscar o nome do perfil associado, usaria um join:
   // .select('*, profiles ( display_name, avatar_url )')

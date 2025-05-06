@@ -1,140 +1,136 @@
 // app/facilities/components/FacilityForm.tsx
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { createFacility, FacilityFormState } from '@/app/facilities/actions';
-import { Button } from '@/components/ui/button'; // Import de shadcn/ui
-import { Input } from '@/components/ui/input';   // Import de shadcn/ui
-import { Label } from '@/components/ui/label';   // Import de shadcn/ui
-import { Textarea } from '@/components/ui/textarea'; // Import de shadcn/ui
+import { useActionState } from 'react';
+import { createFacility, type FacilityFormState } from '../actions';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    // Usando a variante outline para um estilo mais "clean"
-    <Button type="submit" disabled={pending} aria-disabled={pending} variant="outline">
-      {pending ? 'Criando...' : 'Criar Instalação'}
-    </Button>
-  );
-}
+const initialState: FacilityFormState = {};
 
 export function FacilityForm() {
-  const initialState: FacilityFormState = { message: null, errors: {} };
-  const [state, dispatch] = useFormState(createFacility, initialState);
+  const [state, formAction, isPending] = useActionState(createFacility, initialState);
 
   return (
-    <form action={dispatch} className="space-y-6">
+    <form action={formAction} className="space-y-6">
+
       {/* Campo Nome */}
-      <div className="space-y-2">
+      <div>
         <Label htmlFor="name">Nome da Instalação</Label>
-        <Input
-          id="name"
-          name="name"
-          required
-          minLength={3}
-          aria-describedby="name-error"
-          // shadcn/ui Input já tem boa estilização base
-        />
-        <div id="name-error" aria-live="polite" aria-atomic="true">
-          {state.errors?.name &&
-            state.errors.name.map((error: string) => (
-              <p className="mt-1 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
-        </div>
+        <Input id="name" name="name" placeholder="Ex: Ginásio Municipal" required aria-describedby="name-error" />
+        {/* Erro Nome */}
+        {state?.errors?.name && <p id="name-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.name.join(', ')}</p>}
       </div>
 
       {/* Campo Endereço */}
-      <div className="space-y-2">
-        <Label htmlFor="address">Endereço</Label>
-        <Input
-          id="address"
-          name="address"
-          required
-          minLength={5}
-          aria-describedby="address-error"
-        />
-        <div id="address-error" aria-live="polite" aria-atomic="true">
-          {state.errors?.address &&
-            state.errors.address.map((error: string) => (
-              <p className="mt-1 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
-        </div>
+      <div>
+        <Label htmlFor="address">Endereço Completo</Label>
+        <Input id="address" name="address" placeholder="Rua Exemplo, 123, Bairro, Cidade - SP" required aria-describedby="address-error" />
+         {/* Erro Endereço */}
+        {state?.errors?.address && <p id="address-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.address.join(', ')}</p>}
       </div>
 
-       {/* Campo Tipo */}
-       <div className="space-y-2">
-        <Label htmlFor="type">Tipo (Ex: Quadra Poliesportiva, Campo Society)</Label>
-        <Input
-          id="type"
-          name="type"
-          required
-          minLength={3}
-          aria-describedby="type-error"
-        />
-        <div id="type-error" aria-live="polite" aria-atomic="true">
-          {state.errors?.type &&
-            state.errors.type.map((error: string) => (
-              <p className="mt-1 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
-        </div>
-      </div>
+       {/* --- DIV PARA TIPO E CAPACIDADE (LADO A LADO EM TELAS MAIORES) --- */}
+       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Campo Tipo */}
+            <div>
+                <Label htmlFor="type">Tipo</Label>
+                <Select name="type" required>
+                    <SelectTrigger id="type" aria-describedby="type-error">
+                        <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Quadra">Quadra</SelectItem>
+                        <SelectItem value="Ginásio">Ginásio</SelectItem>
+                        <SelectItem value="Campo">Campo</SelectItem>
+                        <SelectItem value="Piscina">Piscina</SelectItem>
+                        <SelectItem value="Pista">Pista</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                </Select>
+                {/* Erro Tipo */}
+                {state?.errors?.type && <p id="type-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.type.join(', ')}</p>}
+            </div>
 
-       {/* Campo Capacidade (Opcional) */}
-       <div className="space-y-2">
-        <Label htmlFor="capacity">Capacidade (Opcional)</Label>
-        <Input
-          id="capacity"
-          name="capacity"
-          type="number"
-          min="1"
-          aria-describedby="capacity-error"
-        />
-        <div id="capacity-error" aria-live="polite" aria-atomic="true">
-          {state.errors?.capacity &&
-            state.errors.capacity.map((error: string) => (
-              <p className="mt-1 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
-        </div>
-      </div>
+            {/* --- NOVO CAMPO CAPACIDADE --- */}
+            <div>
+                <Label htmlFor="capacity">Capacidade (Pessoas)</Label>
+                <Input
+                    id="capacity"
+                    name="capacity"
+                    type="number" // Define o tipo como número
+                    placeholder="Ex: 100"
+                    required
+                    min="0" // Opcional: define capacidade mínima
+                    aria-describedby="capacity-error"
+                />
+                 {/* Erro Capacidade */}
+                {state?.errors?.capacity && (
+                <p id="capacity-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1">
+                    <AlertCircle className="inline w-4 h-4 mr-1" />
+                    {state.errors.capacity.join(', ')}
+                </p>
+                )}
+            </div>
+            {/* --- FIM NOVO CAMPO CAPACIDADE --- */}
+       </div>
+       {/* --- FIM DIV TIPO/CAPACIDADE --- */}
 
-      {/* Campo Descrição (Opcional) */}
-      <div className="space-y-2">
+
+      {/* Campo Descrição */}
+      <div>
         <Label htmlFor="description">Descrição (Opcional)</Label>
-        <Textarea
-          id="description"
-          name="description"
-          rows={4}
-          aria-describedby="description-error"
-          // shadcn/ui Textarea já tem boa estilização base
-        />
-         <div id="description-error" aria-live="polite" aria-atomic="true">
-          {state.errors?.description &&
-            state.errors.description.map((error: string) => (
-              <p className="mt-1 text-sm text-red-500" key={error}>
-                {error}
-              </p>
-            ))}
+        <Textarea id="description" name="description" placeholder="Detalhes sobre a instalação..." rows={4} aria-describedby="description-error" />
+        {/* Erro Descrição */}
+        {state?.errors?.description && <p id="description-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.description.join(', ')}</p>}
+      </div>
+
+      {/* Campos de Contato */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="contact_phone">Telefone de Contato</Label>
+          <Input id="contact_phone" name="contact_phone" type="tel" placeholder="(XX) XXXXX-XXXX" aria-describedby="contact_phone-error" />
+           {/* Erro Telefone */}
+          {state?.errors?.contact_phone && <p id="contact_phone-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.contact_phone.join(', ')}</p>}
+        </div>
+        <div>
+          <Label htmlFor="contact_email">Email de Contato</Label>
+          <Input id="contact_email" name="contact_email" type="email" placeholder="contato@email.com" aria-describedby="contact_email-error" />
+          {/* Erro Email */}
+          {state?.errors?.contact_email && <p id="contact_email-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.contact_email.join(', ')}</p>}
         </div>
       </div>
 
-      {/* Botão de Submit */}
-      <SubmitButton />
+      {/* Campo Horário de Funcionamento */}
+       <div>
+        <Label htmlFor="operating_hours_info">Informações de Horário (Opcional)</Label>
+        <Input id="operating_hours_info" name="operating_hours_info" placeholder="Ex: Seg-Sex: 8h-22h, Sáb: 9h-18h" aria-describedby="operating_hours_info-error" />
+         {/* Erro Horário */}
+        {state?.errors?.operating_hours_info && <p id="operating_hours_info-error" className="text-sm font-medium text-red-600 dark:text-red-400 mt-1"><AlertCircle className="inline w-4 h-4 mr-1" />{state.errors.operating_hours_info.join(', ')}</p>}
+      </div>
 
-      {/* Mensagem geral de erro/sucesso */}
-      {state.message && (
-         <div aria-live="polite" aria-atomic="true">
-            <p className="mt-2 text-sm text-red-500">{state.message}</p>
-         </div>
+      {/* Mensagem de Erro Geral */}
+      {state?.message && state.message.startsWith('Erro') && (
+         <div className="flex items-center gap-2 p-3 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 border border-red-300 dark:border-red-600/50 rounded-md">
+            <AlertCircle className="w-4 h-4" />
+            <span>{state.message}</span>
+          </div>
       )}
+
+      {/* Botão de Submissão */}
+      <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+        {isPending ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : ('Criar Instalação')}
+      </Button>
     </form>
   );
 }

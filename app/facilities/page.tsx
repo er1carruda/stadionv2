@@ -1,59 +1,69 @@
 // app/facilities/page.tsx
-import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers'; // <-- Importa cookies
+import { createClient } from '@/lib/supabase/server'; // Importa o helper modificado
 import Link from 'next/link';
-import { Button } from '@/components/ui/button'; // Import do Button shadcn/ui
-import { AlertTriangle, PlusCircle } from 'lucide-react'; // Ícones
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, PlusCircle } from 'lucide-react';
 
-// Definição de tipo para clareza
 type FacilityWithManager = {
   id: string;
   name: string | null;
   address: string | null;
-  type: string | null;
-  capacity: number | null;
-  description: string | null; // Adicionando descrição
-  status: string | null; // Adicionando status
+  type: string | null; // Adicionando type de volta se quiser exibir
+  capacity: number | null; // Adicionando capacity de volta se quiser exibir
+  description: string | null;
+  status: string | null;
   profiles: {
-    full_name: string | null;
+    display_name: string | null;
   } | null;
 };
 
 export default async function FacilitiesPage() {
-  const supabase = createClient();
+  // ---> Cria o cookieStore e o cliente Supabase AQUI <---
+  const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
 
-  // 1. Busca as instalações e o nome do gerente associado
-  // Selecionando mais campos como description e status
+  // 1. Busca as instalações
+  //    (Ajuste o select para incluir type e capacity se quiser exibi-los)
   const { data: facilities, error: facilitiesError } = await supabase
     .from('facilities')
     .select(`
-      id,
-      name,
-      address,
-      type,
-      capacity,
-      description,
-      status,
-      profiles ( full_name )
+      id, name, address, type, capacity, description, status,
+      profiles ( display_name )
     `)
-    .order('name', { ascending: true }) // Ordenar por nome
-    .returns<FacilityWithManager[]>(); // Força a tipagem
+    .order('name', { ascending: true })
+    .returns<FacilityWithManager[]>(); // Garanta que o tipo inclua type/capacity se selecionado
 
-  // 2. Verifica o usuário atual e sua role para exibir o botão condicionalmente
+  // Log para depuração (opcional)
+  // console.log("Fetched facilities data:", JSON.stringify(facilities, null, 2));
+  if (facilitiesError) {
+    console.error("Error during facilities fetch:", facilitiesError);
+  }
+
+  // 2. Verifica o usuário atual e sua role (usando o mesmo cliente supabase)
   const { data: { user } } = await supabase.auth.getUser();
   let userRole: string | null = null;
+  // let profileDataForLog: any = null; // Removido log detalhado
+
   if (user) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('user_role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
         console.error("Erro ao buscar perfil do usuário:", profileError.message);
-    } else {
-        userRole = profile?.role ?? null;
+    } else if (profile) {
+        userRole = profile.user_role;
+        // profileDataForLog = profile;
     }
   }
+
+  // Logs de depuração (opcional)
+  // console.log("User ID:", user?.id);
+  // console.log("Assigned userRole:", userRole);
+  // console.log("Is Manager Check:", userRole === 'FACILITY_MANAGER');
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -62,10 +72,8 @@ export default async function FacilitiesPage() {
         <h1 className="text-3xl font-semibold tracking-tight text-foreground text-center sm:text-left">
           Instalações Esportivas
         </h1>
-        {/* Botão visível apenas para FACILITY_MANAGER */}
         {userRole === 'FACILITY_MANAGER' && (
           <Button asChild variant="outline">
-            {/* Link para a página de criação */}
             <Link href="/facilities/new" className="flex items-center gap-2">
                <PlusCircle className="w-4 h-4" />
                Criar Nova Instalação
@@ -88,42 +96,35 @@ export default async function FacilitiesPage() {
           {facilities.map((facility) => (
             <div
                 key={facility.id}
-                className="border border-border/60 p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card/80 flex flex-col" // Usando bg-card
+                className="border border-border/60 p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card/80 flex flex-col"
             >
               <h2 className="text-xl font-semibold mb-3 text-card-foreground">{facility.name ?? 'Nome não informado'}</h2>
-
-              <div className="space-y-1.5 text-sm text-muted-foreground flex-grow mb-4"> {/* flex-grow empurra o gerente para baixo */}
-                  <p><span className="font-medium text-card-foreground/90">Tipo:</span> {facility.type ?? 'N/A'}</p>
+              <div className="space-y-1.5 text-sm text-muted-foreground flex-grow mb-4">
                   <p><span className="font-medium text-card-foreground/90">Endereço:</span> {facility.address ?? 'N/A'}</p>
-                  {facility.capacity && (
-                     <p><span className="font-medium text-card-foreground/90">Capacidade:</span> {facility.capacity}</p>
-                  )}
-                  {facility.description && ( // Mostra descrição se existir
+                  {/* Opcional: Exibir Tipo e Capacidade */}
+                  <p><span className="font-medium text-card-foreground/90">Tipo:</span> {facility.type ?? 'N/A'}</p>
+                  <p><span className="font-medium text-card-foreground/90">Capacidade:</span> {facility.capacity ?? 'N/A'}</p>
+                  {facility.description && (
                      <p><span className="font-medium text-card-foreground/90">Descrição:</span> {facility.description}</p>
                   )}
                   <p>
                       <span className="font-medium text-card-foreground/90">Status:</span>
                       <span className={`ml-1 font-medium ${
-                          facility.status === 'Disponível' ? 'text-green-600 dark:text-green-400' :
-                          facility.status === 'Ocupado' ? 'text-red-600 dark:text-red-400' :
-                          facility.status === 'Manutenção' ? 'text-yellow-600 dark:text-yellow-400' :
-                          'text-muted-foreground' // Cor padrão para status desconhecido/nulo
+                          facility.status === 'Active' ? 'text-green-600 dark:text-green-400' :
+                          'text-muted-foreground'
                       }`}>
                           {facility.status ?? 'Indefinido'}
                       </span>
                   </p>
               </div>
-
-              {/* Informação do Gerente */}
               <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/60">
-                <span className="font-medium">Gerente:</span> {facility.profiles?.full_name ?? 'Não atribuído'}
+                <span className="font-medium">Gerente:</span>
+                {facility.profiles?.display_name ?? 'Não atribuído'}
               </p>
-              {/* Futuro: Links para detalhes, editar, excluir */}
             </div>
           ))}
         </div>
       ) : (
-        // Mensagem se não houver erro mas a lista estiver vazia
         !facilitiesError && <p className="text-center text-muted-foreground mt-10">Nenhuma instalação encontrada.</p>
       )}
     </div>
