@@ -8,7 +8,7 @@ import { AlertTriangle } from 'lucide-react';
 export default async function NewFacilityPage() {
   // ---> Cria o cookieStore e o cliente Supabase AQUI <---
   const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+  const supabase = createClient(cookieStore);
 
   // 1. Verificar Autenticação
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -39,27 +39,29 @@ export default async function NewFacilityPage() {
     profileErrorOccurred = true;
   }
 
-
   // 3. Redirecionar se não for FACILITY_MANAGER (ou se erro ao buscar perfil)
   if (userRole !== 'FACILITY_MANAGER') {
     if (profileErrorOccurred) {
-        console.log('Erro ao buscar perfil ou perfil não encontrado para /facilities/new, redirecionando.');
-        redirect('/facilities?error=Erro ao verificar permissões.');
+      console.log('Erro ao buscar perfil ou perfil não encontrado para /facilities/new, redirecionando.');
+      redirect('/facilities?error=Erro ao verificar permissões.');
     } else {
-        console.log(`Usuário ${user?.id} com role ${userRole} tentou acessar /facilities/new. Redirecionando.`);
-        redirect('/facilities?message=Você não tem permissão para criar instalações.');
+      console.log(`Usuário ${user?.id} com role ${userRole} tentou acessar /facilities/new. Redirecionando.`);
+      redirect('/facilities?message=Você não tem permissão para criar instalações.');
     }
   }
 
   // 4. Se chegou até aqui, o usuário é FACILITY_MANAGER. Renderiza o formulário.
   console.log(`Usuário ${user?.id} (FACILITY_MANAGER) acessando /facilities/new.`);
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-3xl font-semibold tracking-tight text-foreground mb-8 text-center sm:text-left">
-        Criar Nova Instalação Esportiva
-      </h1>
-      {/* Renderiza o componente do formulário */}
-      <FacilityForm />
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+      <div className="flex items-center gap-3 mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          Criar Nova Instalação Esportiva
+        </h1>
+      </div>
+      <div className="max-w-2xl mx-auto">
+        <FacilityForm />
+      </div>
     </div>
   );
 }

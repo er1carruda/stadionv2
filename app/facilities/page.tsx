@@ -21,7 +21,7 @@ type FacilityWithManager = {
 export default async function FacilitiesPage() {
   // ---> Cria o cookieStore e o cliente Supabase AQUI <---
   const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+  const supabase = createClient(cookieStore);
 
   // 1. Busca as instalações
   //    (Ajuste o select para incluir type e capacity se quiser exibi-los)
@@ -53,10 +53,10 @@ export default async function FacilitiesPage() {
       .maybeSingle();
 
     if (profileError) {
-        console.error("Erro ao buscar perfil do usuário:", profileError.message);
+      console.error("Erro ao buscar perfil do usuário:", profileError.message);
     } else if (profile) {
-        userRole = profile.user_role;
-        // profileDataForLog = profile;
+      userRole = profile.user_role;
+      // profileDataForLog = profile;
     }
   }
 
@@ -66,17 +66,17 @@ export default async function FacilitiesPage() {
   // console.log("Is Manager Check:", userRole === 'FACILITY_MANAGER');
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       {/* Cabeçalho da Página */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground text-center sm:text-left">
+      <div className="flex items-center gap-3 mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           Instalações Esportivas
         </h1>
         {userRole === 'FACILITY_MANAGER' && (
           <Button asChild variant="outline">
             <Link href="/facilities/new" className="flex items-center gap-2">
-               <PlusCircle className="w-4 h-4" />
-               Criar Nova Instalação
+              <PlusCircle className="w-4 h-4" />
+              Criar Nova Instalação
             </Link>
           </Button>
         )}
@@ -84,10 +84,10 @@ export default async function FacilitiesPage() {
 
       {/* Tratamento de Erro na Busca */}
       {facilitiesError && (
-         <div className="flex items-center justify-center gap-2 p-4 text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 border border-red-300 dark:border-red-600/50 rounded-md max-w-md mx-auto mb-6">
-            <AlertTriangle className="w-5 h-5" />
-            <span>Não foi possível carregar as instalações. Tente novamente mais tarde.</span>
-          </div>
+        <div className="flex items-center justify-center gap-2 p-4 text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 border border-red-300 dark:border-red-600/50 rounded-md max-w-md mx-auto mb-6">
+          <AlertTriangle className="w-5 h-5" />
+          <span>Não foi possível carregar as instalações. Tente novamente mais tarde.</span>
+        </div>
       )}
 
       {/* Listagem das Instalações */}
@@ -95,27 +95,27 @@ export default async function FacilitiesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {facilities.map((facility) => (
             <div
-                key={facility.id}
-                className="border border-border/60 p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card/80 flex flex-col"
+              key={facility.id}
+              className="border border-border/60 p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card/80 flex flex-col"
             >
               <h2 className="text-xl font-semibold mb-3 text-card-foreground">{facility.name ?? 'Nome não informado'}</h2>
               <div className="space-y-1.5 text-sm text-muted-foreground flex-grow mb-4">
-                  <p><span className="font-medium text-card-foreground/90">Endereço:</span> {facility.address ?? 'N/A'}</p>
-                  {/* Opcional: Exibir Tipo e Capacidade */}
-                  <p><span className="font-medium text-card-foreground/90">Tipo:</span> {facility.type ?? 'N/A'}</p>
-                  <p><span className="font-medium text-card-foreground/90">Capacidade:</span> {facility.capacity ?? 'N/A'}</p>
-                  {facility.description && (
-                     <p><span className="font-medium text-card-foreground/90">Descrição:</span> {facility.description}</p>
-                  )}
-                  <p>
-                      <span className="font-medium text-card-foreground/90">Status:</span>
-                      <span className={`ml-1 font-medium ${
-                          facility.status === 'Active' ? 'text-green-600 dark:text-green-400' :
-                          'text-muted-foreground'
-                      }`}>
-                          {facility.status ?? 'Indefinido'}
-                      </span>
-                  </p>
+                <p><span className="font-medium text-card-foreground/90">Endereço:</span> {facility.address ?? 'N/A'}</p>
+                {/* Opcional: Exibir Tipo e Capacidade */}
+                <p><span className="font-medium text-card-foreground/90">Tipo:</span> {facility.type ?? 'N/A'}</p>
+                <p><span className="font-medium text-card-foreground/90">Capacidade:</span> {facility.capacity ?? 'N/A'}</p>
+                {facility.description && (
+                  <p><span className="font-medium text-card-foreground/90">Descrição:</span> {facility.description}</p>
+                )}
+                <p>
+                  <span className="font-medium text-card-foreground/90">Status:</span>
+                  <span className={`ml-1 font-medium ${
+                    facility.status === 'Active' ? 'text-green-600 dark:text-green-400' :
+                    'text-muted-foreground'
+                  }`}>
+                    {facility.status ?? 'Indefinido'}
+                  </span>
+                </p>
               </div>
               <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/60">
                 <span className="font-medium">Gerente:</span>
